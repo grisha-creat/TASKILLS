@@ -2,7 +2,7 @@ from sqlalchemy import or_, select
 from sqlalchemy.orm import Session
 
 from app.core.security import hash_password, verify_password
-from app.models import User
+from app.models.models import User
 
 
 class AuthError(Exception):

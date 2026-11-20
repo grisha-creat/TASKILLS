@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 
 from app.core.db import get_db
 from app.core.security import decode_access_token
-from app.models import User
+from app.models.models import User
 
 COOKIE_NAME = "access_token"
 
