@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Мои инструкции — Step Guides{% endblock %}
+{% block content %}
+<h1>Мои инструкции</h1>
+<p><a href="/guides/new" role="button">+ Новая инструкция</a></p>
+{% if guides %}
+<div class="overflow-auto">
+<table>
+  <thead><tr><th>Название</th><th>Шагов</th><th>Статус</th><th></th></tr></thead>
+  <tbody>
+  {% for g in guides %}
+    <tr>
+      <td><a href="/guides/{{ g.id }}">{{ g.title }}</a></td>
+      <td>{{ g.steps_count }}</td>
+      <td>{{ "опубликована" if g.is_published else "черновик" }}</td>
+      <td>
+        <a href="/guides/{{ g.id }}/edit">Редактировать</a>
+        · <a href="/guides/{{ g.id }}/analytics">Аналитика</a>
+      </td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div>
+{% else %}
+<p>У вас пока нет инструкций.</p>
+{% endif %}
+{% endblock %}

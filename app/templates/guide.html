@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}{{ guide.title }} — Step Guides{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>{{ guide.title }}</h1>
+  <p>{{ guide.description }}</p>
+</hgroup>
+<small>Автор: {{ author.username }}{% if not guide.is_published %} · черновик{% endif %}</small>
+{% if not current_user %}
+  <p><a href="/login">Войдите</a>, чтобы отмечать шаги и сохранять прогресс.</p>
+{% endif %}
+{% include "_steps.html" %}
+{% endblock %}

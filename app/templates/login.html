@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Вход — Step Guides{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>Вход</h1>
+  <form method="post" action="/auth/login">
+    <label>Email <input type="email" name="email" required autofocus></label>
+    <label>Пароль <input type="password" name="password" required></label>
+    <button type="submit">Войти</button>
+  </form>
+  <p>Нет аккаунта? <a href="/register">Зарегистрироваться</a></p>
+</article>
+{% endblock %}

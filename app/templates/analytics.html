@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}Аналитика — {{ guide.title }}{% endblock %}
+{% block content %}
+<hgroup>
+  <h1>Аналитика</h1>
+  <p>{{ guide.title }}</p>
+</hgroup>
+<p><a href="/my">← Мои инструкции</a> · <a href="/guides/{{ guide.id }}">Открыть инструкцию</a></p>
+
+{% if stats.started == 0 %}
+  <article>Пока никто не начал проходить эту инструкцию, данных для аналитики нет.</article>
+{% else %}
+  <div class="stat-grid">
+    <article><small>Начали</small><h2>{{ stats.started }}</h2></article>
+    <article><small>Дошли до конца</small><h2>{{ stats.finished }}</h2></article>
+    <article><small>Доля завершивших</small><h2>{{ stats.finish_percent }}%</h2></article>
+  </div>
+
+  {% set bottleneck = stats.rows | selectattr("is_bottleneck") | list %}
+  {% if bottleneck %}
+  <article class="bottleneck-note">
+    Узкое место: шаг {{ bottleneck[0].position }} «{{ bottleneck[0].title }}».
+    Здесь инструкцию бросили {{ bottleneck[0].drop }} чел. Стоит упростить этот шаг или разбить его на несколько.
+  </article>
+  {% endif %}
+
+  <h3>Сколько пользователей дошло до каждого шага</h3>
+  {% for r in stats.rows %}
+  <div class="bar-row{% if r.is_bottleneck %} bottleneck{% endif %}">
+    <div class="bar-label">{{ r.position }}. {{ r.title }}</div>
+    <div class="bar-track">
+      <div class="bar-fill" style="width: {{ r.percent }}%"></div>
+    </div>
+    <div class="bar-value">
+      {{ r.completed_count }} ({{ r.percent }}%)
+      {% if r.drop %}<small class="drop">−{{ r.drop }}</small>{% endif %}
+    </div>
+  </div>
+  {% endfor %}
+{% endif %}
+{% endblock %}

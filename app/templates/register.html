@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Регистрация — Step Guides{% endblock %}
+{% block content %}
+<article class="narrow">
+  <h1>Регистрация</h1>
+  <form method="post" action="/auth/register">
+    <label>Email <input type="email" name="email" required autofocus></label>
+    <label>Имя пользователя <input type="text" name="username" minlength="3" maxlength="50" required></label>
+    <label>Пароль <input type="password" name="password" minlength="6" maxlength="72" required></label>
+    <button type="submit">Создать аккаунт</button>
+  </form>
+  <p>Уже есть аккаунт? <a href="/login">Войти</a></p>
+</article>
+{% endblock %}

@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block title %}Каталог — Step Guides{% endblock %}
+{% block content %}
+<h1>Каталог инструкций</h1>
+<form method="get" action="/" role="search">
+  <input type="search" name="q" value="{{ q }}" placeholder="Поиск по названию">
+  <button type="submit">Найти</button>
+</form>
+{% if guides %}
+  <div class="grid-cards">
+    {% for g in guides %}
+    <article>
+      <h3><a href="/guides/{{ g.id }}">{{ g.title }}</a></h3>
+      <p>{{ g.description }}</p>
+      <small>{{ g.author_username }} · шагов: {{ g.steps_count }}</small>
+    </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <p>Пока нет инструкций.</p>
+{% endif %}
+{% endblock %}
