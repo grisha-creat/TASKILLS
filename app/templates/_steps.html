@@ -1,0 +1,24 @@
+<div id="steps-block">
+  <progress value="{{ progress.percent }}" max="100"></progress>
+  <p><small>Выполнено {{ progress.done }} из {{ progress.total }} ({{ progress.percent }}%)</small></p>
+  {% for s in steps %}
+  <article class="step{% if s.is_done %} done{% endif %}">
+    <header>
+      {% if current_user %}
+      <label>
+        <input type="checkbox" {% if s.is_done %}checked{% endif %}
+          {% if s.is_done %}hx-delete="/steps/{{ s.id }}/complete"{% else %}hx-post="/steps/{{ s.id }}/complete"{% endif %}
+          hx-target="#steps-block" hx-swap="outerHTML">
+        {{ s.position }}. {{ s.title }}
+      </label>
+      {% else %}
+        <strong>{{ s.position }}. {{ s.title }}</strong>
+      {% endif %}
+    </header>
+    <div class="step-body">{{ s.body }}</div>
+  </article>
+  {% endfor %}
+  {% if progress.total and progress.done == progress.total %}
+    <p><strong>Готово! Вы прошли всю инструкцию.</strong></p>
+  {% endif %}
+</div>
