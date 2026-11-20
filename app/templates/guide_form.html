@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+{% block title %}{{ "Редактирование" if guide and guide.id else "Новая инструкция" }} — Step Guides{% endblock %}
+{% block content %}
+<h1>{{ "Редактирование инструкции" if guide and guide.id else "Новая инструкция" }}</h1>
+{% if error %}<p class="form-error">{{ error }}</p>{% endif %}
+<form method="post" action="{% if guide and guide.id %}/guides/{{ guide.id }}{% else %}/guides{% endif %}">
+  <label>Название
+    <input type="text" name="title" maxlength="200" required value="{{ guide.title if guide else '' }}">
+  </label>
+  <label>Описание
+    <textarea name="description" rows="3">{{ guide.description if guide and guide.description else '' }}</textarea>
+  </label>
+  <label>
+    <input type="checkbox" name="is_published" {% if guide and guide.is_published %}checked{% endif %}>
+    Опубликовать (видна всем в каталоге)
+  </label>
+
+  <h3>Шаги</h3>
+  <div id="steps">
+    {% for s in steps %}
+    <article class="step-row">
+      <input type="hidden" name="step_id" value="{{ s.id or '' }}">
+      <input type="text" name="step_title" placeholder="Заголовок шага" value="{{ s.title }}">
+      <textarea name="step_body" rows="3" placeholder="Описание шага">{{ s.body }}</textarea>
+      <div class="step-actions">
+        <button type="button" class="secondary outline" data-act="up">↑</button>
+        <button type="button" class="secondary outline" data-act="down">↓</button>
+        <button type="button" class="secondary outline" data-act="del">Удалить</button>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+  <button type="button" id="add-step" class="outline">+ Добавить шаг</button>
+  <hr>
+  <button type="submit">Сохранить</button>
+  <a href="/my" role="button" class="secondary outline">Отмена</a>
+</form>
+
+<template id="step-tpl">
+  <article class="step-row">
+    <input type="hidden" name="step_id" value="">
+    <input type="text" name="step_title" placeholder="Заголовок шага">
+    <textarea name="step_body" rows="3" placeholder="Описание шага"></textarea>
+    <div class="step-actions">
+      <button type="button" class="secondary outline" data-act="up">↑</button>
+      <button type="button" class="secondary outline" data-act="down">↓</button>
+      <button type="button" class="secondary outline" data-act="del">Удалить</button>
+    </div>
+  </article>
+</template>
+
+<script>
+  const box = document.getElementById("steps");
+  const tpl = document.getElementById("step-tpl");
+  const add = () => box.appendChild(tpl.content.cloneNode(true));
+  document.getElementById("add-step").addEventListener("click", add);
+  if (!box.children.length) add();
+  box.addEventListener("click", (e) => {
+    const act = e.target.dataset.act;
+    if (!act) return;
+    const row = e.target.closest(".step-row");
+    if (act === "del") row.remove();
+    if (act === "up" && row.previousElementSibling) box.insertBefore(row, row.previousElementSibling);
+    if (act === "down" && row.nextElementSibling) box.insertBefore(row.nextElementSibling, row);
+  });
+</script>
+{% endblock %}

@@ -91,3 +91,133 @@ def set_completion(db: Session, user: User, step_id: int, done: bool) -> Step | 
     except IntegrityError:
         db.rollback()  # двойной клик: отметка уже есть
     return step
+
+
+def guide_analytics(db: Session, guide_id: int) -> dict:
+    steps = db.scalars(
+        select(Step).where(Step.guide_id == guide_id).order_by(Step.position)
+    ).all()
+
+    base = (
+        select(StepCompletion)
+        .join(Step, Step.id == StepCompletion.step_id)
+        .where(Step.guide_id == guide_id)
+    )
+    started = db.scalar(
+        select(func.count(func.distinct(StepCompletion.user_id)))
+        .join(Step, Step.id == StepCompletion.step_id)
+        .where(Step.guide_id == guide_id)
+    ) or 0
+
+    counts = dict(
+        db.execute(
+            select(StepCompletion.step_id, func.count(func.distinct(StepCompletion.user_id)))
+            .join(Step, Step.id == StepCompletion.step_id)
+            .where(Step.guide_id == guide_id)
+            .group_by(StepCompletion.step_id)
+        ).all()
+    )
+
+    finished = 0
+    if steps:
+        per_user = (
+            select(StepCompletion.user_id)
+            .join(Step, Step.id == StepCompletion.step_id)
+            .where(Step.guide_id == guide_id)
+            .group_by(StepCompletion.user_id)
+            .having(func.count(func.distinct(StepCompletion.step_id)) == len(steps))
+            .subquery()
+        )
+        finished = db.scalar(select(func.count()).select_from(per_user)) or 0
+
+    rows = []
+    prev = started
+    for s in steps:
+        c = counts.get(s.id, 0)
+        rows.append({
+            "position": s.position,
+            "title": s.title,
+            "completed_count": c,
+            "percent": round(c * 100 / started) if started else 0,
+            "drop": max(prev - c, 0),
+            "is_bottleneck": False,
+        })
+        prev = c
+
+    with_drop = [r for r in rows if r["drop"] > 0]
+    if with_drop:
+        max(with_drop, key=lambda r: r["drop"])["is_bottleneck"] = True
+
+    return {
+        "started": started,
+        "finished": finished,
+        "finish_percent": round(finished * 100 / started) if started else 0,
+        "rows": rows,
+    }
+
+
+def list_by_author(db: Session, author_id: int) -> list[dict]:
+    stmt = (
+        select(Guide.id, Guide.title, Guide.is_published, func.count(Step.id))
+        .outerjoin(Step, Step.guide_id == Guide.id)
+        .where(Guide.author_id == author_id)
+        .group_by(Guide.id)
+        .order_by(Guide.created_at.desc())
+    )
+    return [
+        {"id": gid, "title": title, "is_published": pub, "steps_count": cnt}
+        for gid, title, pub, cnt in db.execute(stmt)
+    ]
+
+
+def save_guide(
+    db: Session,
+    user: User,
+    guide: Guide | None,
+    title: str,
+    description: str,
+    is_published: bool,
+    items: list[dict],
+) -> Guide:
+    """Создаёт или обновляет инструкцию вместе с шагами.
+
+    items: [{"id": int | None, "title": str, "body": str}] в нужном порядке.
+    Шаги с известным id обновляются (отметки пользователей сохраняются),
+    новые создаются, пропавшие из списка удаляются.
+    """
+    if guide is None:
+        guide = Guide(author_id=user.id, title=title, description=description,
+                      is_published=is_published)
+        db.add(guide)
+        db.flush()
+    else:
+        guide.title = title
+        guide.description = description
+        guide.is_published = is_published
+
+    existing = {
+        s.id: s for s in db.scalars(select(Step).where(Step.guide_id == guide.id))
+    }
+    keep = {i["id"] for i in items if i["id"] in existing}
+
+    for sid, step in list(existing.items()):
+        if sid not in keep:
+            db.delete(step)
+            del existing[sid]
+    db.flush()
+
+    # временный сдвиг, чтобы не нарушить unique(guide_id, position)
+    for step in existing.values():
+        step.position += 100000
+    db.flush()
+
+    for pos, item in enumerate(items, start=1):
+        if item["id"] in keep:
+            step = existing[item["id"]]
+            step.title, step.body, step.position = item["title"], item["body"], pos
+        else:
+            db.add(Step(guide_id=guide.id, position=pos,
+                        title=item["title"], body=item["body"]))
+    db.commit()
+    db.refresh(guide)
+    return guide
