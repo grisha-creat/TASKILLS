@@ -7,7 +7,7 @@ from sqlalchemy import select
 
 from app.core.db import SessionLocal
 from app.models.models import Guide, Step, User
-
+from app.core.security import hash_password
 
 def run_seed():
     db = SessionLocal()
@@ -19,9 +19,9 @@ def run_seed():
 
         # 1. Пользователи
         users = [
-            User(email="anton@taskills.com", username="anton", password_hash="fake-hash-123"),
-            User(email="grisha@taskills.com", username="grisha", password_hash="fake-hash-456"),
-            User(email="test@taskills.com", username="tester", password_hash="fake-hash-789"),
+            User(email="anton@taskills.com", username="anton", password_hash= hash_password("secret123")),
+            User(email="grisha@taskills.com", username="grisha", password_hash=hash_password("secret123")),
+            User(email="test@taskills.com", username="tester", password_hash=hash_password("secret123")),
         ]
         db.add_all(users)
         db.flush()
